@@ -31,25 +31,25 @@ include_directories(
   ${Sophus_INCLUDE_DIRS}
 )
 
-# add_executable(main 
-#   src/main.cpp 
-#   src/frontend.cpp
-#   src/parse_KITTI.cpp
-#   src/visualizer.cpp
-#   src/sensor/map.cpp
-#   src/solve/matcher.cpp
-#   src/solve/detector.cpp
-#   src/solve/triangulator.cpp
-#   src/solve/estimator.cpp
-#   # src/solve/optimizer.cpp
-# )
-# ament_target_dependencies(main ${dependencies})
-# target_link_libraries(main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen)
+add_executable(main 
+  src/main.cpp 
+  src/frontend.cpp
+  src/parse_KITTI.cpp
+  src/visualizer.cpp
+  src/sensor/map.cpp
+  src/sensor/frame.cpp
+  src/solve/matcher.cpp
+  src/solve/detector.cpp
+  src/solve/triangulator.cpp
+  src/solve/estimator.cpp
+)
+ament_target_dependencies(main ${dependencies})
+target_link_libraries(main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen)
 
-# install(TARGETS
-#   main
-#   DESTINATION lib/${PROJECT_NAME}
-# )
+install(TARGETS
+  main
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 add_subdirectory(test)
 

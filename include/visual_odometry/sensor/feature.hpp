@@ -18,17 +18,17 @@ public:
     Feature() = default;
     Feature(const std::weak_ptr<Frame>& frame, const cv::Point2f& point_2d)
     : frame_(frame)
-    , point_2d_(point_2d)
+    , pixel(point_2d)
     {}
 
     Feature(const std::weak_ptr<Frame>& frame, const cv::Point2f& point_2d, const std::shared_ptr<MapPoint> landmark)
     : frame_(frame)
-    , point_2d_(point_2d)
+    , pixel(point_2d)
     , landmark_(landmark)
     {}
 
     std::weak_ptr<Frame> frame_;
-    cv::Point2f point_2d_;
+    cv::Point2f pixel;
     std::shared_ptr<MapPoint> landmark_{nullptr};
 };
 }

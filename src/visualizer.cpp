@@ -38,8 +38,8 @@ void Visualizer::visualizeFeatures(const Context& context)
     for (std::size_t i=0; i<context.frame_curr_->features_left_.size(); ++i)
     {
         cv::line(img_left, 
-            context.frame_prev_->features_left_[i]->point_,
-            context.frame_curr_->features_left_[i]->point_, 
+            context.frame_prev_->features_left_[i]->pixel,
+            context.frame_curr_->features_left_[i]->pixel, 
             cv::Scalar(0,0,255));
     }
 
@@ -91,9 +91,9 @@ void Visualizer::visualizeMapPoints(const Context& context)
     for (const auto& feature : context.frame_curr_->features_left_)
     {
         geometry_msgs::msg::Point p;
-        p.x = feature->landmark_->pose_.x;
-        p.y = feature->landmark_->pose_.y;
-        p.z = feature->landmark_->pose_.z;
+        p.x = feature->landmark_->pose_.x();
+        p.y = feature->landmark_->pose_.y();
+        p.z = feature->landmark_->pose_.z();
         m.points.push_back(p);
     }
 

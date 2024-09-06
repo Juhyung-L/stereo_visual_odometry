@@ -17,9 +17,6 @@ public:
         P_ << fx_, 0, cx_, tx_, 0, fy_, cy_, ty_, 0, 0, 1, tz_;
     }
 
-    Sophus::SE3d pose_;
-    Sophus::SE3d pose_inverse_;
-
     cv::Point3f pixelToWorld(const cv::Point2f& pixel, double depth)
     {
         return cv::Point3f(

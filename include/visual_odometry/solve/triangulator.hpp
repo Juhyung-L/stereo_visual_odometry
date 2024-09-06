@@ -21,7 +21,6 @@ public:
 private:
     Camera camera_left_;
     Camera camera_right_;
-    unsigned long  landmark_id_{0};
 };
 }
 

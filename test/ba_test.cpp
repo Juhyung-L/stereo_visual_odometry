@@ -94,7 +94,7 @@ bool project3DtoPixel(const Eigen::Vector3d& point_3d,
 void makeFeaturesAndCorrespondence(const std::shared_ptr<Map>& map,
     const Eigen::Matrix3d& intrinsics)
 {    
-    for (auto& frame : map->key_frames_)
+    for (auto& frame : map->frames_)
     {
         for (auto& landmark : map->landmarks_)
         {
@@ -120,7 +120,7 @@ void makeFeaturesAndCorrespondence(const std::shared_ptr<Map>& map,
 std::shared_ptr<Map> copyMap(const std::shared_ptr<Map>& map)
 {
     std::shared_ptr<Map> map_cpy = std::make_shared<Map>();
-    for (const auto& frame : map->key_frames_)
+    for (const auto& frame : map->frames_)
     {
         std::shared_ptr<Frame> frame_cpy = std::make_shared<Frame>();
         frame_cpy->pose_ = frame->pose_;
@@ -128,7 +128,7 @@ std::shared_ptr<Map> copyMap(const std::shared_ptr<Map>& map)
         frame_cpy->features_left_.reserve(frame->features_left_.size());
         for (const auto& feature : frame->features_left_)
         {
-            frame_cpy->pushFeatureLeft(feature->point_2d_);
+            frame_cpy->pushFeatureLeft(feature->pixel);
         }
     }
 
@@ -141,14 +141,14 @@ std::shared_ptr<Map> copyMap(const std::shared_ptr<Map>& map)
         mp[landmark] = landmark_cpy;
     }
 
-    for (std::size_t i=0; i<map->key_frames_.size(); ++i)
+    for (std::size_t i=0; i<map->frames_.size(); ++i)
     {
-        for (std::size_t j=0; j<map->key_frames_[i]->features_left_.size(); ++j)
+        for (std::size_t j=0; j<map->frames_[i]->features_left_.size(); ++j)
         {
             std::shared_ptr<MapPoint>& landmark_cpy = 
-                mp[map->key_frames_[i]->features_left_[j]->landmark_];
-            map_cpy->key_frames_[i]->features_left_[j]->landmark_ = landmark_cpy;
-            landmark_cpy->observations_.push_back(map_cpy->key_frames_[i]->features_left_[j]);
+                mp[map->frames_[i]->features_left_[j]->landmark_];
+            map_cpy->frames_[i]->features_left_[j]->landmark_ = landmark_cpy;
+            landmark_cpy->observations_.push_back(map_cpy->frames_[i]->features_left_[j]);
         }
     }
     return map_cpy;
@@ -169,7 +169,7 @@ std::shared_ptr<Map> copyMapAndAddNoise(const std::shared_ptr<Map>& map)
     std::normal_distribution<double> pose_rotation_noise(0, pose_rotation_stddev);
     std::normal_distribution<double> landmark_noise(0, landmark_stddev);
 
-    for (auto& frame : map_cpy->key_frames_)
+    for (auto& frame : map_cpy->frames_)
     {
         frame->pose_.translation().x() += pose_translation_noise(gen);
         frame->pose_.translation().y() += pose_translation_noise(gen);
@@ -198,16 +198,16 @@ void optimize(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics
     ceres::Problem problem;
 
     std::vector<Sophus::SE3d> inverse_poses;
-    inverse_poses.reserve(map->key_frames_.size());
-    for (std::size_t i=0; i<map->key_frames_.size(); ++i)
+    inverse_poses.reserve(map->frames_.size());
+    for (std::size_t i=0; i<map->frames_.size(); ++i)
     {
-        std::shared_ptr<Frame>& frame = map->key_frames_[i];
+        std::shared_ptr<Frame>& frame = map->frames_[i];
         inverse_poses.push_back(frame->pose_.inverse());
         for (const auto& feature : frame->features_left_)
         {
             ReprojectionError* constraint = new ReprojectionError(
-                static_cast<double>(feature->point_2d_.x),
-                static_cast<double>(feature->point_2d_.y),
+                static_cast<double>(feature->pixel.x),
+                static_cast<double>(feature->pixel.y),
                 intrinsics);
             ceres::CostFunction* cost_function = 
                 new ceres::AutoDiffCostFunction<ReprojectionError, 2, 7, 3>(constraint);
@@ -228,7 +228,7 @@ void optimize(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics
 
     for (std::size_t i=0; i<inverse_poses.size(); ++i)
     {
-        map->key_frames_[i]->pose_ = inverse_poses[i].inverse();
+        map->frames_[i]->pose_ = inverse_poses[i].inverse();
     }
 }
 

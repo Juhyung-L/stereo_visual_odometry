@@ -35,8 +35,8 @@ void Detector::detectFeatures(Context& context)
     std::vector<std::shared_ptr<Feature>>& features = context.frame_curr_->features_left_;
     for (const std::shared_ptr<Feature>& feature : features)
     {
-        int x = feature->point_.x;
-        int y = feature->point_.y;
+        int x = feature->pixel.x;
+        int y = feature->pixel.y;
         int idx = static_cast<int>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + static_cast<int>(x / grid_cell_size_);
         occ_grid[idx] = true;
     }

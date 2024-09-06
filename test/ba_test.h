@@ -34,7 +34,7 @@ public:
         const std::shared_ptr<Map>& map,
         const std_msgs::msg::ColorRGBA& poses_color,
         const std_msgs::msg::ColorRGBA& landmarks_color,
-        const std_msgs::msg::ColorRGBA& correspondence_color)
+        const std_msgs::msg::ColorRGBA& /*correspondence_color*/)
     {
         visualizePoses(map, poses_color);
         visualizeLandmarks(map, landmarks_color);
@@ -71,8 +71,8 @@ private:
         m.scale.z = 0.2; // height
 
         visualization_msgs::msg::MarkerArray m_arr;
-        m_arr.markers.reserve(map->key_frames_.size());
-        for (const std::shared_ptr<Frame>& frame : map->key_frames_)
+        m_arr.markers.reserve(map->frames_.size());
+        for (const std::shared_ptr<Frame>& frame : map->frames_)
         {
             m.id = this->now().nanoseconds();
             Sophus::Vector3d& pose = frame->pose_.translation();

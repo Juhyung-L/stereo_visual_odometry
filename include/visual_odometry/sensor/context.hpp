@@ -19,16 +19,13 @@ public:
     std::vector<cv::Point2f> points_left_;
     std::vector<cv::Point2f> points_right_;
 
-    unsigned long frame_id_{0};
     void insertImages(cv::Mat img_left, cv::Mat img_right)
     {
         std::shared_ptr<Frame> frame = std::make_shared<Frame>();
         frame->img_left_ = img_left;
         frame->img_right_ = img_right;
-        frame->id_ = frame_id_;
         frame_prev_ = frame_curr_;
         frame_curr_ = frame;
-        ++frame_id_;
     }
 };
 }

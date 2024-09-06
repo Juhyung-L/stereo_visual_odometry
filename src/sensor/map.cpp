@@ -7,11 +7,11 @@ namespace VO
 {
 void Map::insertKeyFrame(const std::shared_ptr<Frame> key_frame)
 {
-    key_frames_.push_back(key_frame);
+    frames_.push_back(key_frame);
 
-    if (key_frames_.size() > num_active_key_frames_)
+    if (frames_.size() > num_active_frames_)
     {
-        key_frames_.pop_front();
+        frames_.pop_front();
     }
 }
 

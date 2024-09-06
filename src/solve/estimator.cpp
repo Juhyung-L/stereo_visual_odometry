@@ -69,17 +69,13 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
 
     Sophus::SE3d T(eigen_R, eigen_T);
 
+    // I thought it would be current_pose = T * prev_pose?
     context.frame_curr_->pose_ = context.frame_prev_->pose_ * T.inverse();
 
     // transform landmarks into world frame
     for (std::shared_ptr<Feature>& feature : context.frame_curr_->features_left_)
     {
-        cv::Point3f& point = feature->landmark_->pose_;
-        Eigen::Vector3d v3d(point.x, point.y, point.z);
-        v3d = context.frame_curr_->pose_ * v3d;
-        point.x = v3d[0];
-        point.y = v3d[1];
-        point.z = v3d[2];
+        feature->landmark_->pose_ = context.frame_curr_->pose_ * feature->landmark_->pose_;
     }
 
     Sophus::SE3d& curr_pose = context.frame_curr_->pose_;

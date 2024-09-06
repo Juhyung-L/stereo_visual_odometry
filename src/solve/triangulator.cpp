@@ -41,11 +41,11 @@ void Triangulator::triangulate(Context& context)
         if (!landmark)
         {
             landmark = std::make_shared<MapPoint>();
-            landmark->id_ = landmark_id_;
             map_->insertLandmark(landmark);
-            ++landmark_id_;
         }
-        landmark->pose_ = points_3d[i];
+        landmark->pose_.x() = points_3d[i].x;
+        landmark->pose_.y() = points_3d[i].y;
+        landmark->pose_.z() = points_3d[i].z;
         landmark->observations_.push_back(context.frame_prev_->features_left_[i]);
 
         // set landmark of the corresponding feature in the current frame

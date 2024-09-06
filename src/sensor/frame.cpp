@@ -23,7 +23,7 @@ std::vector<cv::Point2f> Frame::featuresToPoint2D(const std::vector<std::shared_
     points.reserve(features.size());
     for (const auto& feature : features)
     {
-        points.push_back(feature->point_2d_);
+        points.push_back(feature->pixel);
     }
     return points;
 }
@@ -34,8 +34,9 @@ std::vector<cv::Point3f> Frame::featuresToPoint3D(const std::vector<std::shared_
     points.reserve(features.size());
     for (const auto& feature : features)
     {
-        const Eigen::Vector3d& pose = feature->landmark_->pose_;
-        points.emplace_back(pose.x(), pose.y(), pose.z());
+        points.emplace_back(feature->landmark_->pose_.x(), 
+            feature->landmark_->pose_.y(), 
+            feature->landmark_->pose_.z());
     }
     return points;
 }
