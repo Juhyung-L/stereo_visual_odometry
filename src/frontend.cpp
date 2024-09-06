@@ -23,7 +23,7 @@ void Frontend::insertImages(cv::Mat img_left, cv::Mat img_right)
             initialize();
             break;
         case TRACKING:
-            process();
+            track();
             break;
         default:
             throw std::runtime_error("Unknown status");
@@ -37,7 +37,7 @@ void Frontend::initialize()
     status_ = TRACKING;
 }
 
-void Frontend::process()
+void Frontend::track()
 {
     std::cout << "------------------------------------------------------------'\n";
     matcher_.matchCircular(context_);
@@ -48,11 +48,8 @@ void Frontend::process()
     map_->cleanMap();
     visualizer_->visualize(context_);
 
-    // insert current frame into map every 5 frames
-    if (context_.frame_curr_->id_ % 5 == 0)
-    {
-        map_->insertKeyFrame(context_.frame_curr_);
-    }
+    // insert current frame into map
+    map_->insertKeyFrame(context_.frame_curr_);
 
     // if number of features is below the threshold, add new features
     if (context_.frame_curr_->features_left_.size() < min_feature_size_)

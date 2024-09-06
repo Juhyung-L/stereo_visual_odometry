@@ -29,7 +29,7 @@ public:
 
 private:
     void initialize();
-    void process();
+    void track();
     
     Context context_;
     Status status_{INITIALIZING};

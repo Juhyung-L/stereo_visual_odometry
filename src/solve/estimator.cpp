@@ -1,5 +1,8 @@
 #include <iostream>
 
+#include <Eigen/Core>
+
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/calib3d.hpp>
 #include <sophus/se3.hpp>
 
@@ -22,9 +25,9 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
      */
 
     std::vector<int> inliers;
-    cv::Mat coeffs = cv::Mat::zeros(4, 1, CV_64FC1);
-    cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64F);
-    cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
+    cv::Matx41d coeffs = cv::Matx41d::zeros();
+    cv::Matx31d tvec = cv::Matx31d::zeros();
+    cv::Matx31d rvec = cv::Matx31d::zeros();
     cv::solvePnPRansac(points_3d, points_2d, K, coeffs, rvec, tvec,
         false, 1000, 3.0, 0.99, inliers);
     
@@ -55,16 +58,14 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
     std::cout << inliers.size() << " features used to estimate motion\n";
 
     // convert the rotational vector intor rotational matrix using Rodrigues
-    cv::Mat R = cv::Mat::eye(3, 3, CV_64F);
+    cv::Matx33d R = cv::Matx33d::eye();
     cv::Rodrigues(rvec, R);
 
     // convert to Sophus SE3d
     Eigen::Matrix3d eigen_R;
     Eigen::Vector3d eigen_T;
-    eigen_R << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2),
-               R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2),
-               R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2);
-    eigen_T << tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0);
+    cv::cv2eigen<double, 3, 3>(R, eigen_R);
+    cv::cv2eigen<double, 3, 1>(tvec, eigen_T);
 
     Sophus::SE3d T(eigen_R, eigen_T);
 
