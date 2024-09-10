@@ -10,18 +10,20 @@ namespace VO
 Visualizer::Visualizer()
 : Node("VO_visualizer")
 {
-    line_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-        "vo_line", rclcpp::SystemDefaultsQoS());
-    points_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-        "vo_points", rclcpp::SystemDefaultsQoS());
-    img_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-        "vo_image", rclcpp::SystemDefaultsQoS());
+    pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "vo/poses", rclcpp::SystemDefaultsQoS());
+    landmark_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "vo/landmarks", rclcpp::SystemDefaultsQoS());
+    frame_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+        "vo/frame", rclcpp::SystemDefaultsQoS());
+    ground_truth_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+        "vo/ground_truth", rclcpp::SystemDefaultsQoS());
 }
 
 void Visualizer::visualize(const Context& context)
 {
     // visualizeFeatures(context);
-    // visualizeMapPoints(context);
+    visualizeLandmarks(context);
     visualizePose(context);
 }
 
@@ -29,8 +31,7 @@ void Visualizer::visualizeFeatures(const Context& context)
 {
     cv::Mat img_left;
     cv::Mat img_right;
-    // cv::Mat img_left = context.frame_curr_->img_left_.clone();
-    // cv::Mat img_right = context.frame_curr_->img_right_.clone();
+
     cv::cvtColor(context.frame_curr_->img_left_, img_left, cv::COLOR_GRAY2BGR);
     cv::cvtColor(context.frame_curr_->img_right_, img_right, cv::COLOR_GRAY2BGR);
     
@@ -68,10 +69,10 @@ void Visualizer::visualizeFeatures(const Context& context)
     cv_img.image = both_imgs;
     cv_img.toImageMsg(img_msg);
 
-    img_pub_->publish(img_msg);
+    frame_pub_->publish(img_msg);
 }
 
-void Visualizer::visualizeMapPoints(const Context& context)
+void Visualizer::visualizeLandmarks(const Context& context)
 {
     visualization_msgs::msg::Marker m;
     m.header.frame_id = "map";
@@ -97,7 +98,7 @@ void Visualizer::visualizeMapPoints(const Context& context)
         m.points.push_back(p);
     }
 
-    points_pub_->publish(m);
+    landmark_pub_->publish(m);
 }
 
 void Visualizer::visualizePose(const Context& context)
@@ -127,6 +128,42 @@ void Visualizer::visualizePose(const Context& context)
     p.z = context.frame_curr_->pose_.translation().z();
     m.points.push_back(p);
 
-    line_pub_->publish(m);
+    pose_pub_->publish(m);
+}
+
+void Visualizer::visualizeGroundTruth(const std::vector<Sophus::SE3f>& ground_truth_poses)
+{
+    visualization_msgs::msg::Marker m;
+    m.header.frame_id = "map";
+    m.lifetime = rclcpp::Duration::from_seconds(0);
+    m.frame_locked = false;
+    m.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    m.scale.x = 1.0;
+    m.color.a = 1.0;
+    m.color.r = 1.0;
+    m.color.g = 1.0;
+    m.color.b = 1.0;
+    m.action = visualization_msgs::msg::Marker::ADD;
+
+    visualization_msgs::msg::MarkerArray m_arr;
+    geometry_msgs::msg::Point p;
+    for (std::size_t i=1; i<ground_truth_poses.size(); ++i)
+    {
+        m.points.clear();
+        m.header.stamp = this->now();
+        m.id = this->now().nanoseconds();
+
+        p.x = ground_truth_poses[i-1].translation().x();
+        p.y = ground_truth_poses[i-1].translation().y();
+        p.z = ground_truth_poses[i-1].translation().z();
+        m.points.push_back(p);
+
+        p.x = ground_truth_poses[i].translation().x();
+        p.y = ground_truth_poses[i].translation().y();
+        p.z = ground_truth_poses[i].translation().z();
+        m.points.push_back(p);
+        m_arr.markers.push_back(m);
+    }
+    ground_truth_pub_->publish(m_arr);
 }
 }

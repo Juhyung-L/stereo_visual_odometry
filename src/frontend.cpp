@@ -28,6 +28,7 @@ void Frontend::insertImages(cv::Mat img_left, cv::Mat img_right)
         default:
             throw std::runtime_error("Unknown status");
     }
+    ++iterations_;
 }
 
 void Frontend::initialize()
@@ -44,12 +45,18 @@ void Frontend::track()
     triangulator_.triangulate(context_);
     estimator_.estimate(context_, camera_left_.K_);
 
-    // this function deletes landmarks in the map that have no features pointing to it
-    map_->cleanMap();
     visualizer_->visualize(context_);
 
     // insert current frame into map
     map_->insertKeyFrame(context_.frame_curr_);
+    // this function deletes landmarks in the map that have no features pointing to it
+    map_->cleanMap();
+    
+    // bundle adjustment
+    if (do_bundle_adjustment_ && iterations_ % 15 == 0)
+    {
+        optimizer_.optimize(map_, camera_left_.K_);
+    }
 
     // if number of features is below the threshold, add new features
     if (context_.frame_curr_->features_left_.size() < min_feature_size_)

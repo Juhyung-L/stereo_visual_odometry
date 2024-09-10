@@ -7,11 +7,15 @@ ament_target_dependencies(ba_test
     std_msgs
 )
 
-add_executable(test_stuff test.cpp)
-target_link_libraries(test_stuff ${OpenCV_LIBS} Eigen3::Eigen)
+add_executable(matcher_test matcher_test.cpp)
+target_link_libraries(matcher_test ${OpenCV_LIBS} Eigen3::Eigen)
+
+add_executable(sophus_test sophus_test.cpp)
+target_link_libraries(sophus_test ${Sophus_LIBRARIES} Eigen3::Eigen)
 
 install(TARGETS 
     ba_test
-    test_stuff
+    matcher_test
+    sophus_test
     DESTINATION lib/${PROJECT_NAME}    
 )

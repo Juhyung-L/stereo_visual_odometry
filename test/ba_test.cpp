@@ -5,6 +5,13 @@
 
 #include <Eigen/Geometry>
 
+#include <ceres/problem.h>
+#include <ceres/solver.h>
+#include <ceres/numeric_diff_cost_function.h>
+#include <ceres/autodiff_cost_function.h>
+
+#include <sophus/ceres_manifold.hpp>
+
 #include <opencv2/core.hpp>
 
 #include "std_msgs/msg/color_rgba.hpp"
@@ -83,7 +90,7 @@ bool project3DtoPixel(const Eigen::Vector3d& point_3d,
     cv::Point2f& pixel)
 {
     double pixel_x = -point_3d.y() / point_3d.x() * intrinsics(0, 0) + intrinsics(0, 2);
-    double pixel_y = point_3d.z() / point_3d.x() * intrinsics(1, 1) + intrinsics(1, 2);
+    double pixel_y = -point_3d.z() / point_3d.x() * intrinsics(1, 1) + intrinsics(1, 2);
     
     pixel.x = pixel_x;
     pixel.y = pixel_y;
@@ -161,9 +168,9 @@ std::shared_ptr<Map> copyMapAndAddNoise(const std::shared_ptr<Map>& map)
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    const double pose_translation_stddev = 0.1;
-    const double pose_rotation_stddev = 0.05;
-    const double landmark_stddev = 0.1;
+    const double pose_translation_stddev = 0.2;
+    const double pose_rotation_stddev = 0.06;
+    const double landmark_stddev = 0.2;
 
     std::normal_distribution<double> pose_translation_noise(0, pose_translation_stddev);
     std::normal_distribution<double> pose_rotation_noise(0, pose_rotation_stddev);
@@ -197,12 +204,9 @@ void optimize(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics
 {
     ceres::Problem problem;
 
-    std::vector<Sophus::SE3d> inverse_poses;
-    inverse_poses.reserve(map->frames_.size());
     for (std::size_t i=0; i<map->frames_.size(); ++i)
     {
         std::shared_ptr<Frame>& frame = map->frames_[i];
-        inverse_poses.push_back(frame->pose_.inverse());
         for (const auto& feature : frame->features_left_)
         {
             ReprojectionError* constraint = new ReprojectionError(
@@ -213,7 +217,47 @@ void optimize(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics
                 new ceres::AutoDiffCostFunction<ReprojectionError, 2, 7, 3>(constraint);
             problem.AddResidualBlock(cost_function,
                 nullptr,
-                inverse_poses[i].data(),
+                frame->pose_.data(),
+                feature->landmark_->pose_.data());
+        }
+    }
+
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.minimizer_progress_to_stdout = true;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << summary.FullReport() << std::endl;
+}
+
+void optimizeLieAlgebra(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics)
+{
+    ceres::Problem problem;
+    ceres::Manifold* se3Parametrization = new Sophus::Manifold<Sophus::SE3>();
+    
+    for (const std::shared_ptr<MapPoint>& landmark : map->landmarks_)
+    {
+        problem.AddParameterBlock(landmark->pose_.data(), 3);
+    }
+
+    for (std::size_t i=0; i<map->frames_.size(); ++i)
+    {
+        std::shared_ptr<Frame>& frame = map->frames_[i];
+        problem.AddParameterBlock(frame->pose_.data(), Sophus::SE3d::num_parameters, se3Parametrization);
+        for (const std::shared_ptr<Feature>& feature : frame->features_left_)
+        {
+            ReprojectionError* constraint = new ReprojectionError(
+                static_cast<double>(feature->pixel.x),
+                static_cast<double>(feature->pixel.y),
+                intrinsics);
+            ceres::CostFunction* cost_function = 
+                new ceres::NumericDiffCostFunction<
+                    ReprojectionError, ceres::CENTRAL, 2, Sophus::SE3d::num_parameters, 3>(
+                        constraint);
+            problem.AddResidualBlock(cost_function,
+                nullptr,
+                frame->pose_.data(),
                 feature->landmark_->pose_.data());
         }
     }
@@ -225,11 +269,6 @@ void optimize(const std::shared_ptr<Map>& map, const Eigen::Matrix3d& intrinsics
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport() << std::endl;
-
-    for (std::size_t i=0; i<inverse_poses.size(); ++i)
-    {
-        map->frames_[i]->pose_ = inverse_poses[i].inverse();
-    }
 }
 
 int main(int argc, char** argv)
@@ -261,7 +300,7 @@ int main(int argc, char** argv)
     visualizer->visualizeAll(map_cpy, color4, color5, color6);
 
     // visualizer->clearAllMarkers();
-    optimize(map_cpy, intrinsics);
+    optimizeLieAlgebra(map_cpy, intrinsics);
 
     std_msgs::msg::ColorRGBA color7, color8, color9;
     color7.a = 1.0; color7.r = 1.0; color7.g = 0.0; color7.b = 1.0;

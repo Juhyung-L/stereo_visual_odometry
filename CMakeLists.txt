@@ -22,6 +22,7 @@ set(dependencies
   geometry_msgs
   sensor_msgs
   visualization_msgs
+  std_msgs
   cv_bridge
 )
 
@@ -42,9 +43,10 @@ add_executable(main
   src/solve/detector.cpp
   src/solve/triangulator.cpp
   src/solve/estimator.cpp
+  src/solve/optimizer.cpp
 )
 ament_target_dependencies(main ${dependencies})
-target_link_libraries(main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen Ceres::ceres)
 
 install(TARGETS
   main

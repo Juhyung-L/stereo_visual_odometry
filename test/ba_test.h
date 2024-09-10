@@ -1,7 +1,7 @@
 #include <unordered_set>
 
 #include <Eigen/Geometry>
-#include <ceres/ceres.h>
+
 #include <ceres/rotation.h>
 
 #include "rclcpp/rclcpp.hpp"
@@ -181,9 +181,9 @@ public:
     {
         T q[4];
         q[0] = extrinsics[3];
-        q[1] = extrinsics[2];
-        q[2] = extrinsics[1];
-        q[3] = extrinsics[0];
+        q[1] = -extrinsics[2];
+        q[2] = -extrinsics[1];
+        q[3] = -extrinsics[0];
 
         T R[9];
         ceres::QuaternionToRotation(q, R);
@@ -198,12 +198,12 @@ public:
         p_c[1] = R[7]*p_w[0] + R[4]*p_w[1] + R[1]*p_w[2];
         p_c[2] = R[6]*p_w[0] + R[3]*p_w[1] + R[0]*p_w[2];
 
-        p_c[0] += extrinsics[4];
-        p_c[1] += extrinsics[5];
-        p_c[2] += extrinsics[6];
+        p_c[0] -= R[8]*extrinsics[4] + R[5]*extrinsics[5] + R[2]*extrinsics[6];
+        p_c[1] -= R[7]*extrinsics[4] + R[4]*extrinsics[5] + R[1]*extrinsics[6];
+        p_c[2] -= R[6]*extrinsics[4] + R[3]*extrinsics[5] + R[0]*extrinsics[6];
 
         T predicted_x = -p_c[1] / p_c[0] * intrinsics_(0, 0) + intrinsics_(0, 2);
-        T predicted_y = p_c[2] / p_c[0] * intrinsics_(1, 1) + intrinsics_(1, 2);
+        T predicted_y = -p_c[2] / p_c[0] * intrinsics_(1, 1) + intrinsics_(1, 2);
 
         residuals[0] = predicted_x - observed_x_;
         residuals[1] = predicted_y - observed_y_;

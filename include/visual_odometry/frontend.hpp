@@ -12,6 +12,7 @@
 #include "visual_odometry/solve/matcher.hpp"
 #include "visual_odometry/solve/triangulator.hpp"
 #include "visual_odometry/solve/estimator.hpp"
+#include "visual_odometry/solve/optimizer.hpp"
 #include "visual_odometry/visualizer.hpp"
 
 namespace VO
@@ -24,6 +25,10 @@ public:
     Frontend() = default;
     Frontend(const Camera& camera_left, const Camera& camera_right, const std::shared_ptr<Map> map);
     void insertImages(cv::Mat img_left, cv::Mat img_right);
+    void enableBundleAdjustment()
+    {
+        do_bundle_adjustment_ = true;
+    }
 
     std::shared_ptr<Visualizer> visualizer_;
 
@@ -38,6 +43,7 @@ private:
     Matcher matcher_;
     Triangulator triangulator_;
     Estimator estimator_;
+    Optimizer optimizer_;
 
     Camera camera_left_;
     Camera camera_right_;
@@ -45,6 +51,8 @@ private:
     std::shared_ptr<Map> map_;
     const int bucket_cell_size_{15};
     const unsigned long min_feature_size_{2000};
+    unsigned long iterations_{0};
+    bool do_bundle_adjustment_{false};
 };
 }
 
