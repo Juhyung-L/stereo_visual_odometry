@@ -11,6 +11,7 @@
 namespace VO
 {
 class Feature;
+class MapPoint;
 class Frame : public std::enable_shared_from_this<Frame>
 {
 public:
@@ -26,12 +27,14 @@ public:
 
     Sophus::SE3d pose_{Sophus::SE3d()};
 
-    std::vector<cv::Point2f> getPointsLeft2D();
+    std::vector<cv::Point2f> getPointsLeft2D(std::size_t start_idx);
     std::vector<cv::Point3f> getPointsLeft3D();
     void pushFeatureLeft(const cv::Point2f& point_2d);
+    void pushFeatureLeftWithLandmark(const cv::Point2f& point_2d, const std::shared_ptr<MapPoint>& landmark);
 
 private:
-    std::vector<cv::Point2f> featuresToPoint2D(const std::vector<std::shared_ptr<Feature>>& features);
+    std::vector<cv::Point2f> featuresToPoint2D(
+        const std::vector<std::shared_ptr<Feature>>& features, std::size_t start_idx);
     std::vector<cv::Point3f> featuresToPoint3D(const std::vector<std::shared_ptr<Feature>>& features);
 };
 }

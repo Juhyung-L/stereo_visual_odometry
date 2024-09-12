@@ -19,6 +19,8 @@ public:
     std::shared_ptr<Map> map_;
     
 private:
+    std::size_t firstFeatureWithoutLandmark(const std::vector<std::shared_ptr<Feature>>& feature);
+
     Camera camera_left_;
     Camera camera_right_;
 };

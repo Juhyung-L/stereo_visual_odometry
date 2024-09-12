@@ -3,6 +3,7 @@
 #include <ceres/numeric_diff_cost_function.h>
 #include <ceres/problem.h>
 #include <ceres/solver.h>
+#include <ceres/loss_function.h>
 
 #include <sophus/ceres_manifold.hpp>
 
@@ -10,32 +11,33 @@
 
 namespace VO
 {
-void Optimizer::optimize(const std::shared_ptr<Map>& map, const cv::Matx33d& intrinsics)
+void Optimizer::optimize(const std::shared_ptr<Map>& map, 
+    const cv::Matx33d& K, double loss_function_scale)
 {
     ceres::Problem problem;
     ceres::Manifold* se3Parametrization = new Sophus::Manifold<Sophus::SE3>();
+    ceres::LossFunction* loss_function = new ceres::HuberLoss(loss_function_scale);
     
     for (const std::shared_ptr<MapPoint>& landmark : map->landmarks_)
     {
         problem.AddParameterBlock(landmark->pose_.data(), 3);
     }
 
-    for (std::size_t i=0; i<map->frames_.size(); ++i)
+    for (const std::shared_ptr<Frame>& frame : map->frames_)
     {
-        std::shared_ptr<Frame>& frame = map->frames_[i];
         problem.AddParameterBlock(frame->pose_.data(), Sophus::SE3d::num_parameters, se3Parametrization);
         for (const std::shared_ptr<Feature>& feature : frame->features_left_)
         {
             ReprojectionError* constraint = new ReprojectionError(
                 static_cast<double>(feature->pixel.x),
                 static_cast<double>(feature->pixel.y),
-                intrinsics);
+                K);
             ceres::CostFunction* cost_function = 
                 new ceres::NumericDiffCostFunction<
                     ReprojectionError, ceres::CENTRAL, 2, Sophus::SE3d::num_parameters, 3>(
                         constraint);
             problem.AddResidualBlock(cost_function,
-                nullptr,
+                loss_function,
                 frame->pose_.data(),
                 feature->landmark_->pose_.data());
         }

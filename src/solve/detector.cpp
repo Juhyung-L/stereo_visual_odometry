@@ -27,12 +27,12 @@ Detector::Detector(int grid_cell_size)
 void Detector::detectFeatures(Context& context)
 {
     // divide the frame into square cells of size grid_cell_size_ by grid_cell_size_
-    const int NUM_GRID_CELL_COLS = std::ceil(static_cast<double>(context.frame_curr_->img_left_.cols )/ grid_cell_size_);
-    const int NUM_GRID_CELL_ROWS = std::ceil(static_cast<double>(context.frame_curr_->img_right_.rows )/ grid_cell_size_);
+    const int NUM_GRID_CELL_COLS = std::ceil(static_cast<double>(context.frame_prev_->img_left_.cols )/ grid_cell_size_);
+    const int NUM_GRID_CELL_ROWS = std::ceil(static_cast<double>(context.frame_prev_->img_right_.rows )/ grid_cell_size_);
     std::vector<bool> occ_grid(NUM_GRID_CELL_COLS * NUM_GRID_CELL_ROWS, false);
 
     // mark location of existing features
-    std::vector<std::shared_ptr<Feature>>& features = context.frame_curr_->features_left_;
+    std::vector<std::shared_ptr<Feature>>& features = context.frame_prev_->features_left_;
     for (const std::shared_ptr<Feature>& feature : features)
     {
         int x = feature->pixel.x;
@@ -43,7 +43,7 @@ void Detector::detectFeatures(Context& context)
 
     // detect new features
     std::vector<cv::KeyPoint> keypoints;
-    detector_->detect(context.frame_curr_->img_left_, keypoints);
+    detector_->detect(context.frame_prev_->img_left_, keypoints);
     std::sort(keypoints.begin(), keypoints.end(), keypoint_comparator);
 
     // add new features only if they are in unoccupied cells
@@ -55,7 +55,7 @@ void Detector::detectFeatures(Context& context)
         int idx = static_cast<int>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + static_cast<int>(x / grid_cell_size_);
         if (!occ_grid[idx])
         {
-            context.frame_curr_->pushFeatureLeft(kp.pt);
+            context.frame_prev_->pushFeatureLeft(kp.pt);
             occ_grid[idx] = true;
             ++new_feature_cnt;
         }

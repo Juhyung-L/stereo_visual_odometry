@@ -14,7 +14,7 @@ public:
     Detector(int grid_cell_size);
     void detectFeatures(Context& context);
 private:
-    int grid_cell_size_{1};
+    int grid_cell_size_{15};
     cv::Ptr<cv::FeatureDetector> detector_;
 };
 }

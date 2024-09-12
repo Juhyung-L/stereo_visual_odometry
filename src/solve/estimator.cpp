@@ -15,7 +15,7 @@ Estimator::Estimator()
 
 void Estimator::estimate(Context& context, const cv::Matx33d& K)
 {
-    std::vector<cv::Point2f> points_2d = context.frame_curr_->getPointsLeft2D();
+    std::vector<cv::Point2f> points_2d = context.frame_curr_->getPointsLeft2D(0);
     std::vector<cv::Point3f> points_3d = context.frame_curr_->getPointsLeft3D();
 
     /**
@@ -32,28 +32,19 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
         false, 1000, 3.0, 0.99, inliers);
     
     // remove features if it was not used to estimate motion
-    std::vector<std::shared_ptr<Feature>> left_feature_prev;
     std::vector<std::shared_ptr<Feature>> left_feature_curr;
-    std::vector<cv::Point2f> right_feature_prev;
     std::vector<cv::Point2f> right_feature_curr;
 
-    left_feature_prev.reserve(inliers.size());
     left_feature_curr.reserve(inliers.size());
-    right_feature_prev.reserve(inliers.size());
     right_feature_curr.reserve(inliers.size());
 
     for (int inlier_idx : inliers)
     {
-        left_feature_prev.push_back(context.frame_prev_->features_left_[inlier_idx]);
         left_feature_curr.push_back(context.frame_curr_->features_left_[inlier_idx]);
-    
-        right_feature_prev.push_back(context.frame_prev_->features_right_[inlier_idx]);
         right_feature_curr.push_back(context.frame_curr_->features_right_[inlier_idx]);
     }
 
-    context.frame_prev_->features_left_ = left_feature_prev;
     context.frame_curr_->features_left_ = left_feature_curr;
-    context.frame_prev_->features_right_ = right_feature_prev;
     context.frame_curr_->features_right_ = right_feature_curr;
     std::cout << inliers.size() << " features used to estimate motion\n";
 

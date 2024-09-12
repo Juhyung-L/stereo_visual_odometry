@@ -5,7 +5,7 @@
 
 namespace VO
 {
-void Map::insertKeyFrame(const std::shared_ptr<Frame> key_frame)
+void Map::insertFrame(const std::shared_ptr<Frame> key_frame)
 {
     frames_.push_back(key_frame);
 
@@ -14,6 +14,11 @@ void Map::insertKeyFrame(const std::shared_ptr<Frame> key_frame)
         frames_.pop_front();
     }
 }
+
+// void Map::insertFrame(const std::shared_ptr<Frame> key_frame)
+// {
+
+// }
 
 void Map::insertLandmark(const std::shared_ptr<MapPoint> landmark)
 {

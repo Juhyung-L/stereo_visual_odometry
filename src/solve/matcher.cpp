@@ -8,14 +8,12 @@
 namespace VO
 {
 /**
- * - Only called during initialization.
- * - When called, only features of the left image are found, 
- *   so it uses optical flow to find the corresponding features in the right image.
+ * Uses optical flow to match features between left and right images.
  */
 void Matcher::matchStereo(Context& context)
 {
-    // at this point, only the left features are populated
-    std::vector<cv::Point2f> points_left = context.frame_curr_->getPointsLeft2D();
+    std::size_t features_right_size = context.frame_prev_->features_right_.size();
+    std::vector<cv::Point2f> points_left = context.frame_prev_->getPointsLeft2D(features_right_size);
     std::vector<cv::Point2f> points_right;
     std::vector<float> err;
     std::vector<uchar> status;
@@ -24,13 +22,17 @@ void Matcher::matchStereo(Context& context)
     
     // calculate the optical flow from left features to right features
     cv::calcOpticalFlowPyrLK(
-        context.frame_curr_->img_left_,context.frame_curr_->img_right_,
+        context.frame_prev_->img_left_,context.frame_prev_->img_right_,
         points_left, points_right,
         status, err, window_size, 3, term, 0, 0.001);
 
-    std::vector<std::shared_ptr<Feature>> features_left = context.frame_curr_->features_left_;
-    context.frame_curr_->features_left_.clear();
-    context.frame_curr_->features_right_.clear();
+    std::vector<std::shared_ptr<Feature>>& features_left = context.frame_prev_->features_left_;
+    std::vector<cv::Point2f>& features_right = context.frame_prev_->features_right_;
+
+    std::vector<std::shared_ptr<Feature>> new_features_left(
+        features_left.begin()+features_right_size, features_left.end());
+    features_left.erase(features_left.begin()+features_right_size, features_left.end());
+    features_right.reserve(features_right.size()+points_right.size());
     for (std::size_t i=0; i<status.size(); ++i)
     {
         if (points_left[i].x < 0 || points_left[i].y < 0 ||
@@ -39,18 +41,17 @@ void Matcher::matchStereo(Context& context)
         {}
         else
         {
-            context.frame_curr_->features_left_.push_back(features_left[i]);
-            context.frame_curr_->features_right_.push_back(points_right[i]);
+            features_left.push_back(new_features_left[i]);
+            features_right.push_back(points_right[i]);
         }
     }
-    context.frame_curr_->features_left_.shrink_to_fit();
-    context.frame_curr_->features_right_.shrink_to_fit();
+    features_left.shrink_to_fit();
 }
 
 void Matcher::matchCircular(Context& context)
 {
     // already populated
-    std::vector<cv::Point2f> points_left_prev = context.frame_prev_->getPointsLeft2D();
+    std::vector<cv::Point2f> points_left_prev = context.frame_prev_->getPointsLeft2D(0);
     std::vector<cv::Point2f>& points_right_prev = context.frame_prev_->features_right_;
 
     // empty
@@ -107,7 +108,7 @@ void Matcher::matchCircular(Context& context)
             context.frame_prev_->features_left_.push_back(features_left_prev[i]);
             context.frame_prev_->features_right_.push_back(points_right_prev[i]);
             // populate the features list of the current image
-            context.frame_curr_->pushFeatureLeft(points_left_curr[i]);
+            context.frame_curr_->pushFeatureLeftWithLandmark(points_left_curr[i], features_left_prev[i]->landmark_);
             context.frame_curr_->features_right_.push_back(points_right_curr[i]);
         }
     }

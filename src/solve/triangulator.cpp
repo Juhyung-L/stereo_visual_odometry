@@ -13,6 +13,18 @@ Triangulator::Triangulator(const Camera& camera_left, const Camera& camera_right
 , camera_right_(camera_right)
 {}
 
+std::size_t Triangulator::firstFeatureWithoutLandmark(const std::vector<std::shared_ptr<Feature>>& features)
+{
+    for (std::size_t i=0; i<features.size(); ++i)
+    {
+        if (!features[i]->landmark_)
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
 /**
  * - Estimates the 3D position of the 2D features using triangulation.
  * - The 3D points are made into MapPoints, which are inserted into the map.
@@ -20,8 +32,11 @@ Triangulator::Triangulator(const Camera& camera_left, const Camera& camera_right
 
 void Triangulator::triangulate(Context& context)
 {
-    std::vector<cv::Point2f> matches_2d_left = context.frame_prev_->getPointsLeft2D();
-    std::vector<cv::Point2f>& matches_2d_right = context.frame_prev_->features_right_;
+    std::size_t start_idx = firstFeatureWithoutLandmark(context.frame_prev_->features_left_);
+    std::vector<cv::Point2f> matches_2d_left = context.frame_prev_->getPointsLeft2D(start_idx);
+    std::vector<cv::Point2f> matches_2d_right(
+        context.frame_prev_->features_right_.begin()+start_idx,
+        context.frame_prev_->features_right_.end());
 
     std::cout << matches_2d_left.size() << " points triangulated\n";
 
@@ -37,19 +52,13 @@ void Triangulator::triangulate(Context& context)
     // triangulated points are set as the corresponding 2D feature's landmark (MapPoint)
     for (std::size_t i=0; i<points_3d.size(); ++i)
     {
-        std::shared_ptr<MapPoint>& landmark = context.frame_prev_->features_left_[i]->landmark_;
-        if (!landmark)
-        {
-            landmark = std::make_shared<MapPoint>();
-            map_->insertLandmark(landmark);
-        }
+        std::shared_ptr<MapPoint>& landmark = context.frame_prev_->features_left_[i+start_idx]->landmark_;
+        landmark = std::make_shared<MapPoint>();
         landmark->pose_.x() = points_3d[i].x;
         landmark->pose_.y() = points_3d[i].y;
         landmark->pose_.z() = points_3d[i].z;
-        landmark->observations_.push_back(context.frame_prev_->features_left_[i]);
-
-        // set landmark of the corresponding feature in the current frame
-        context.frame_curr_->features_left_[i]->landmark_ = landmark;
+        map_->insertLandmark(landmark);
+        landmark->observations_.push_back(context.frame_prev_->features_left_[i+start_idx]);
     }
 }
 }

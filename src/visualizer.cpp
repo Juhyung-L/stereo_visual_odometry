@@ -20,11 +20,11 @@ Visualizer::Visualizer()
         "vo/ground_truth", rclcpp::SystemDefaultsQoS());
 }
 
-void Visualizer::visualize(const Context& context)
+void Visualizer::visualize(const Context& context, const std::vector<Sophus::SE3d>& poses)
 {
     // visualizeFeatures(context);
     visualizeLandmarks(context);
-    visualizePose(context);
+    visualizePose(poses);
 }
 
 void Visualizer::visualizeFeatures(const Context& context)
@@ -101,15 +101,24 @@ void Visualizer::visualizeLandmarks(const Context& context)
     landmark_pub_->publish(m);
 }
 
-void Visualizer::visualizePose(const Context& context)
+void Visualizer::visualizePose(const std::vector<Sophus::SE3d>& poses)
 {
     visualization_msgs::msg::Marker m;
     m.header.frame_id = "map";
+
+    // delete the last pose
+    if (prev_poses_id_ > -1)
+    {
+        m.id = prev_poses_id_;
+        m.action = visualization_msgs::msg::Marker::DELETE;
+        pose_pub_->publish(m);
+    }
+    ++prev_poses_id_;
     m.header.stamp = this->now();
     m.lifetime = rclcpp::Duration::from_seconds(0);
     m.frame_locked = false;
-    m.id = this->now().nanoseconds();
-    m.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    m.id = prev_poses_id_;
+    m.type = visualization_msgs::msg::Marker::LINE_LIST;
     m.scale.x = 1.0;
     m.color.a = 1.0;
     m.color.r = 1.0; // red
@@ -118,16 +127,18 @@ void Visualizer::visualizePose(const Context& context)
     m.action = visualization_msgs::msg::Marker::ADD;
 
     geometry_msgs::msg::Point p;
-    p.x = context.frame_prev_->pose_.translation().x();
-    p.y = context.frame_prev_->pose_.translation().y();
-    p.z = context.frame_prev_->pose_.translation().z();
-    m.points.push_back(p);
+    for (std::size_t i=1; i<poses.size(); ++i)
+    {
+        p.x = poses[i-1].translation().x();
+        p.y = poses[i-1].translation().y();
+        p.z = poses[i-1].translation().z();
+        m.points.push_back(p);
 
-    p.x = context.frame_curr_->pose_.translation().x();
-    p.y = context.frame_curr_->pose_.translation().y();
-    p.z = context.frame_curr_->pose_.translation().z();
-    m.points.push_back(p);
-
+        p.x = poses[i].translation().x();
+        p.y = poses[i].translation().y();
+        p.z = poses[i].translation().z();
+        m.points.push_back(p);
+    }
     pose_pub_->publish(m);
 }
 

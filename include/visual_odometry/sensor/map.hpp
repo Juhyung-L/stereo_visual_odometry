@@ -14,12 +14,13 @@ class Map
 {
 public:
     Map() = default;
-    void insertKeyFrame(std::shared_ptr<Frame> key_frame);
+    void insertFrame(std::shared_ptr<Frame> key_frame);
     void insertLandmark(std::shared_ptr<MapPoint> landmark);
     void cleanMap();
 
     std::unordered_set<std::shared_ptr<MapPoint>> landmarks_;
     std::deque<std::shared_ptr<Frame>> frames_;
+    // std::unordered_set<std::shared_ptr<Frame>> frames_;
 
     const unsigned int num_active_frames_{30};
 };
