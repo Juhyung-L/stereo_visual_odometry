@@ -14,7 +14,6 @@
 #include "visual_odometry/solve/triangulator.hpp"
 #include "visual_odometry/solve/estimator.hpp"
 #include "visual_odometry/solve/optimizer.hpp"
-#include "visual_odometry/visualizer.hpp"
 
 namespace VO
 {
@@ -23,16 +22,20 @@ class Frontend
 public:    
     Frontend() = default;
     Frontend(const Camera& camera_left, const Camera& camera_right, const std::shared_ptr<Map> map);
+    void initialize();
     void visualOdometryPipeline();
 
     Context context_;
+    std::vector<Sophus::SE3d> poses_;
 
-    std::shared_ptr<Visualizer> visualizer_;
     bool do_bundle_adjustment_{false};
-    unsigned long min_num_features_{500};
+
+    // parameters
+    unsigned long min_num_features_{1000};
     int grid_cell_size_{5};
     double loss_function_scale_{1.0};
     int bundle_adjustment_window_{20};
+    double max_allowed_translation_sq_{10.0};
 
 private:
     
@@ -46,8 +49,13 @@ private:
     Camera camera_right_;
 
     std::shared_ptr<Map> map_;
-    unsigned long iterations_{0};
-    std::vector<Sophus::SE3d> poses_;
+    unsigned long iterations_{1};
+
+    bool estimation_status_;
+    bool retried_{false};
+
+    void resetContext();
+    void resetMap();
 };
 }
 

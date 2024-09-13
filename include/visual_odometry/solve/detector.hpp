@@ -10,11 +10,12 @@ namespace VO
 class Detector
 {
 public:
-    Detector() = default;
+    Detector();
     Detector(int grid_cell_size);
     void detectFeatures(Context& context);
+    
+    int grid_cell_size_{5};
 private:
-    int grid_cell_size_{15};
     cv::Ptr<cv::FeatureDetector> detector_;
 };
 }

@@ -22,10 +22,11 @@ private:
     void visualizeFeatures(const Context& context);
     void visualizePose(const std::vector<Sophus::SE3d>& poses);
 
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_pub_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr poses_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ground_truth_pub_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr landmark_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr frame_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr frame_left_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr frame_right_pub_;
 
     int32_t prev_poses_id_{-1};
 };

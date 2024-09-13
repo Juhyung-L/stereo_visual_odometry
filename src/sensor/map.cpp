@@ -28,7 +28,8 @@ void Map::insertLandmark(const std::shared_ptr<MapPoint> landmark)
 void Map::cleanMap()
 {
     int landmark_deletion_count = 0;
-    for (auto it = landmarks_.begin(); it != landmarks_.end();)
+    auto it = landmarks_.begin();
+    while (it != landmarks_.end())
     {
         std::vector<std::weak_ptr<Feature>>& observations = (*it)->observations_;
         observations.erase(std::remove_if(observations.begin(), observations.end(),

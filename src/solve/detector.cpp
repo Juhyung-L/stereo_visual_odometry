@@ -18,10 +18,14 @@ static const auto keypoint_comparator = [](const cv::KeyPoint& kp1, const cv::Ke
     return std::abs(kp1.response) > std::abs(kp2.response);
 };
 
+Detector::Detector()
+: detector_(cv::FastFeatureDetector::create(20, 100))
+{}
+
 Detector::Detector(int grid_cell_size)
 : grid_cell_size_(grid_cell_size)
 {
-    detector_ = cv::FastFeatureDetector::create(20, 100);
+    Detector();
 }
 
 void Detector::detectFeatures(Context& context)

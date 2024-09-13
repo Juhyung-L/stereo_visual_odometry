@@ -10,10 +10,7 @@
 
 namespace VO
 {
-Estimator::Estimator()
-{}
-
-void Estimator::estimate(Context& context, const cv::Matx33d& K)
+bool Estimator::estimate(Context& context, const cv::Matx33d& K)
 {
     std::vector<cv::Point2f> points_2d = context.frame_curr_->getPointsLeft2D(0);
     std::vector<cv::Point3f> points_3d = context.frame_curr_->getPointsLeft3D();
@@ -54,11 +51,20 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
 
     // convert to Sophus SE3d
     Eigen::Matrix3d eigen_R;
-    Eigen::Vector3d eigen_T;
+    Eigen::Vector3d eigen_t;
     cv::cv2eigen<double, 3, 3>(R, eigen_R);
-    cv::cv2eigen<double, 3, 1>(tvec, eigen_T);
+    cv::cv2eigen<double, 3, 1>(tvec, eigen_t);
 
-    Sophus::SE3d T(eigen_R, eigen_T);
+    Sophus::SE3d T(eigen_R, eigen_t);
+
+    double distance_traveled_sq_ = 
+        eigen_t.x()*eigen_t.x() +
+        eigen_t.y()*eigen_t.y() +
+        eigen_t.z()*eigen_t.z();
+    if (distance_traveled_sq_ > max_allowed_translation_sq_)
+    {
+        return false;
+    }
 
     // I thought it would be current_pose = T * prev_pose?
     context.frame_curr_->pose_ = context.frame_prev_->pose_ * T.inverse();
@@ -73,5 +79,6 @@ void Estimator::estimate(Context& context, const cv::Matx33d& K)
     std::cout << "x: " << curr_pose.translation().x() 
               << "y: " << curr_pose.translation().y() 
               << "z: " << curr_pose.translation().z() << std::endl;
+    return true;
 }
 }

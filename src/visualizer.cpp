@@ -10,19 +10,22 @@ namespace VO
 Visualizer::Visualizer()
 : Node("VO_visualizer")
 {
-    pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+    poses_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "vo/poses", rclcpp::SystemDefaultsQoS());
     landmark_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "vo/landmarks", rclcpp::SystemDefaultsQoS());
-    frame_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-        "vo/frame", rclcpp::SystemDefaultsQoS());
+    frame_left_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+        "vo/frame_left", rclcpp::SystemDefaultsQoS());
+    frame_right_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+        "vo/frame_right", rclcpp::SystemDefaultsQoS());
     ground_truth_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         "vo/ground_truth", rclcpp::SystemDefaultsQoS());
 }
 
 void Visualizer::visualize(const Context& context, const std::vector<Sophus::SE3d>& poses)
 {
-    // visualizeFeatures(context);
+    if (!context.frame_prev_) {return;}
+    visualizeFeatures(context);
     visualizeLandmarks(context);
     visualizePose(poses);
 }
@@ -32,44 +35,36 @@ void Visualizer::visualizeFeatures(const Context& context)
     cv::Mat img_left;
     cv::Mat img_right;
 
-    cv::cvtColor(context.frame_curr_->img_left_, img_left, cv::COLOR_GRAY2BGR);
-    cv::cvtColor(context.frame_curr_->img_right_, img_right, cv::COLOR_GRAY2BGR);
+    cv::cvtColor(context.frame_prev_->img_left_, img_left, cv::COLOR_GRAY2BGR);
+    cv::cvtColor(context.frame_prev_->img_right_, img_right, cv::COLOR_GRAY2BGR);
     
-    // draw lines connecting previous feature and current feature
     for (std::size_t i=0; i<context.frame_curr_->features_left_.size(); ++i)
     {
-        cv::line(img_left, 
+        cv::circle(img_left, 
             context.frame_prev_->features_left_[i]->pixel,
-            context.frame_curr_->features_left_[i]->pixel, 
+            3.0,
             cv::Scalar(0,0,255));
     }
 
     for (std::size_t i=0; i<context.frame_curr_->features_right_.size(); ++i)
     {
-        cv::line(img_right, 
+        cv::circle(img_right, 
             context.frame_prev_->features_right_[i],
-            context.frame_curr_->features_right_[i], 
+            3.0, 
             cv::Scalar(0,0,255));
     }
-    
-    cv::Mat both_imgs(img_left.rows, img_left.cols+img_right.cols, CV_8UC3);
-    cv::hconcat(img_left, img_right, both_imgs);
-    // for (std::size_t i=0; i<context.frame_curr_->features_left_.size(); ++i)
-    // {
-    //     cv::line(both_imgs,
-    //         context.frame_curr_->features_left_[i]->point_,
-    //         cv::Point(context.frame_curr_->features_right_[i].x+img_left.cols, context.frame_curr_->features_right_[i].y),
-    //         cv::Scalar(0,0,255));
-    // }
 
-    sensor_msgs::msg::Image img_msg;
     cv_bridge::CvImage cv_img;
     cv_img.header.stamp = this->now();
     cv_img.encoding = "bgr8";
-    cv_img.image = both_imgs;
+    sensor_msgs::msg::Image img_msg;
+    cv_img.image = img_left;
     cv_img.toImageMsg(img_msg);
+    frame_left_pub_->publish(img_msg);
 
-    frame_pub_->publish(img_msg);
+    cv_img.image = img_right;
+    cv_img.toImageMsg(img_msg);
+    frame_right_pub_->publish(img_msg);
 }
 
 void Visualizer::visualizeLandmarks(const Context& context)
@@ -111,7 +106,7 @@ void Visualizer::visualizePose(const std::vector<Sophus::SE3d>& poses)
     {
         m.id = prev_poses_id_;
         m.action = visualization_msgs::msg::Marker::DELETE;
-        pose_pub_->publish(m);
+        poses_pub_->publish(m);
     }
     ++prev_poses_id_;
     m.header.stamp = this->now();
@@ -119,7 +114,7 @@ void Visualizer::visualizePose(const std::vector<Sophus::SE3d>& poses)
     m.frame_locked = false;
     m.id = prev_poses_id_;
     m.type = visualization_msgs::msg::Marker::LINE_LIST;
-    m.scale.x = 1.0;
+    m.scale.x = 2.0;
     m.color.a = 1.0;
     m.color.r = 1.0; // red
     m.color.g = 0.0;
@@ -139,7 +134,7 @@ void Visualizer::visualizePose(const std::vector<Sophus::SE3d>& poses)
         p.z = poses[i].translation().z();
         m.points.push_back(p);
     }
-    pose_pub_->publish(m);
+    poses_pub_->publish(m);
 }
 
 void Visualizer::visualizeGroundTruth(const std::vector<Sophus::SE3f>& ground_truth_poses)
@@ -149,7 +144,7 @@ void Visualizer::visualizeGroundTruth(const std::vector<Sophus::SE3f>& ground_tr
     m.lifetime = rclcpp::Duration::from_seconds(0);
     m.frame_locked = false;
     m.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    m.scale.x = 1.0;
+    m.scale.x = 0.6;
     m.color.a = 1.0;
     m.color.r = 1.0;
     m.color.g = 1.0;
