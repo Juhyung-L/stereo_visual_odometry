@@ -27,15 +27,15 @@ void Map::cleanMap()
     while (it != landmarks_.end())
     {
         std::vector<std::weak_ptr<Feature>>& observations = (*it)->observations_;
-        bool valid = true;
+        bool all_expired = true;
         for (const std::weak_ptr<Feature>& feature : observations)
         {
-            if (feature.expired()) {valid = false;}
+            all_expired = all_expired && feature.expired();
         }
 
         // if after deleting all the expired features, the features list is empty,
         // delete the landmark from map
-        if (!valid)
+        if (!all_expired)
         {
             it = landmarks_.erase(it);
             ++landmark_deletion_count;

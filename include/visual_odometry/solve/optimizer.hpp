@@ -18,7 +18,7 @@ public:
     void optimize(const std::shared_ptr<Map>& map, 
         const cv::Matx33d& K, double loss_function_scale);
     
-    double loss_function_scale_{1.0};
+    double loss_function_scale_{5.0};
 };
 
 class ReprojectionError

@@ -72,10 +72,16 @@ void Frontend::visualOdometryPipeline()
     if (do_bundle_adjustment_ && iterations_ % bundle_adjustment_window_ == 0)
     {
         optimizer_.optimize(map_, camera_left_.K_, loss_function_scale_);
+        // erase the poses that will get optimized
+        if (poses_.size() < map_->frames_.size()) {poses_.clear();}
+        else {poses_.erase(poses_.end()-map_->frames_.size(), poses_.end());}
+        for (const std::shared_ptr<Frame>& frame : map_->frames_) {poses_.push_back(frame->pose_);}
+    }
+    else
+    {
+        poses_.push_back(context_.frame_prev_->pose_);
     }
     std::cout << "------------------------------------------------------------'\n";
-    
-    poses_.push_back(context_.frame_prev_->pose_);
     ++iterations_;
 }
 

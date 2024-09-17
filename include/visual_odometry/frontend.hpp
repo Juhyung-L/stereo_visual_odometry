@@ -28,14 +28,14 @@ public:
     Context context_;
     std::vector<Sophus::SE3d> poses_;
 
-    bool do_bundle_adjustment_{false};
-
     // parameters
-    unsigned long min_num_features_{1000};
-    int grid_cell_size_{5};
-    double loss_function_scale_{1.0};
+    bool do_bundle_adjustment_{false};
+    unsigned long min_num_features_{500};
+    int grid_cell_size_{10};
+    double loss_function_scale_{5.0};
     int bundle_adjustment_window_{20};
     double max_allowed_translation_sq_{10.0};
+    int num_active_frames_{30};
 
 private:
     

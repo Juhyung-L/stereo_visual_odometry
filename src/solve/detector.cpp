@@ -22,12 +22,6 @@ Detector::Detector()
 : detector_(cv::FastFeatureDetector::create(20, 100))
 {}
 
-Detector::Detector(int grid_cell_size)
-: grid_cell_size_(grid_cell_size)
-{
-    Detector();
-}
-
 void Detector::detectFeatures(Context& context)
 {
     // divide the frame into square cells of size grid_cell_size_ by grid_cell_size_
@@ -41,7 +35,10 @@ void Detector::detectFeatures(Context& context)
     {
         int x = feature->pixel.x;
         int y = feature->pixel.y;
-        int idx = static_cast<int>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + static_cast<int>(x / grid_cell_size_);
+        std::size_t idx = 
+            static_cast<std::size_t>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + 
+            static_cast<std::size_t>(x / grid_cell_size_);
+        if (idx >= occ_grid.size()) {continue;} // idk why I have to manually catch out of bounds write
         occ_grid[idx] = true;
     }
 
@@ -56,8 +53,10 @@ void Detector::detectFeatures(Context& context)
     {
         int x = kp.pt.x;
         int y = kp.pt.y;
-        int idx = static_cast<int>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + static_cast<int>(x / grid_cell_size_);
-        if (!occ_grid[idx])
+        std::size_t idx = 
+            static_cast<std::size_t>(y / grid_cell_size_) * NUM_GRID_CELL_COLS + 
+            static_cast<std::size_t>(x / grid_cell_size_);
+        if (idx < occ_grid.size() && !occ_grid[idx])
         {
             context.frame_prev_->pushFeatureLeft(kp.pt);
             occ_grid[idx] = true;

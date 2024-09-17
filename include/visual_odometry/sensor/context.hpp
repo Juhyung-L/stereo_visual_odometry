@@ -16,7 +16,7 @@ public:
     std::shared_ptr<Frame> frame_prev_{nullptr};
     std::shared_ptr<Frame> frame_curr_{nullptr};
 
-    void insertImages(cv::Mat img_left, cv::Mat img_right)
+    void insertImages(const cv::Mat& img_left, const cv::Mat& img_right)
     {
         std::shared_ptr<Frame> frame = std::make_shared<Frame>();
         frame->img_left_ = img_left;

@@ -48,23 +48,8 @@ add_executable(main
 ament_target_dependencies(main ${dependencies})
 target_link_libraries(main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen Ceres::ceres)
 
-add_executable(valgrind_main
-  src/valgrind_main
-  src/frontend.cpp
-  src/parse_KITTI.cpp
-  src/sensor/map.cpp
-  src/sensor/frame.cpp
-  src/solve/matcher.cpp
-  src/solve/detector.cpp
-  src/solve/triangulator.cpp
-  src/solve/estimator.cpp
-  src/solve/optimizer.cpp
-)
-target_link_libraries(valgrind_main ${OpenCV_LIBS} ${Sophus_LIBRARIES} Eigen3::Eigen Ceres::ceres)
-
 install(TARGETS
   main
-  valgrind_main
   DESTINATION lib/${PROJECT_NAME}
 )
 

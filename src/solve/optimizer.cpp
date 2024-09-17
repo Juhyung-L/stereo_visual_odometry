@@ -24,9 +24,15 @@ void Optimizer::optimize(const std::shared_ptr<Map>& map,
         problem.AddParameterBlock(landmark->pose_.data(), 3);
     }
 
+    bool first_iter = true;
     for (const std::shared_ptr<Frame>& frame : map->frames_)
     {
         problem.AddParameterBlock(frame->pose_.data(), Sophus::SE3d::num_parameters, se3Parametrization);
+        if (first_iter) 
+        {
+            problem.SetParameterBlockConstant(frame->pose_.data());
+            first_iter = false;
+        }
         for (const std::shared_ptr<Feature>& feature : frame->features_left_)
         {
             ReprojectionError* constraint = new ReprojectionError(

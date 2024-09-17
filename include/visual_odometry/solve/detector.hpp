@@ -11,7 +11,6 @@ class Detector
 {
 public:
     Detector();
-    Detector(int grid_cell_size);
     void detectFeatures(Context& context);
     
     int grid_cell_size_{5};
