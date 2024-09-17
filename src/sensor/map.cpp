@@ -30,12 +30,12 @@ void Map::cleanMap()
         bool all_expired = true;
         for (const std::weak_ptr<Feature>& feature : observations)
         {
+            // if just one feature is not expired, all_expired will be false
             all_expired = all_expired && feature.expired();
         }
 
-        // if after deleting all the expired features, the features list is empty,
-        // delete the landmark from map
-        if (!all_expired)
+        // if all features are expired, erase the landmark
+        if (all_expired)
         {
             it = landmarks_.erase(it);
             ++landmark_deletion_count;
