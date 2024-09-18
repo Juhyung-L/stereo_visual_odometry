@@ -24,14 +24,18 @@ void Optimizer::optimize(const std::shared_ptr<Map>& map,
         problem.AddParameterBlock(landmark->pose_.data(), 3);
     }
 
-    bool first_iter = true;
+    int i = 0;
     for (const std::shared_ptr<Frame>& frame : map->frames_)
     {
         problem.AddParameterBlock(frame->pose_.data(), Sophus::SE3d::num_parameters, se3Parametrization);
-        if (first_iter) 
+        // make the first 3 frame (and all landmarks connected to the frames) constant
+        if (i < 3) 
         {
             problem.SetParameterBlockConstant(frame->pose_.data());
-            first_iter = false;
+            for (const std::shared_ptr<Feature>& feature : frame->features_left_)
+            {
+                problem.SetParameterBlockConstant(feature->landmark_->pose_.data());
+            }
         }
         for (const std::shared_ptr<Feature>& feature : frame->features_left_)
         {
@@ -48,6 +52,7 @@ void Optimizer::optimize(const std::shared_ptr<Map>& map,
                 frame->pose_.data(),
                 feature->landmark_->pose_.data());
         }
+        ++i;
     }
 
     ceres::Solver::Options options;

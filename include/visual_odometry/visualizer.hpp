@@ -20,15 +20,18 @@ public:
 private:
     void visualizeLandmarks(const Context& context);
     void visualizeFeatures(const Context& context);
-    void visualizePose(const std::vector<Sophus::SE3d>& poses);
+    void visualizePoseAsLines(const std::vector<Sophus::SE3d>& poses);
+    void visualizePoseAsArrows(const std::vector<Sophus::SE3d>& poses);
 
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr poses_pub_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr lines_pub_;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr arrows_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ground_truth_pub_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr landmark_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr frame_left_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr frame_right_pub_;
 
-    int32_t prev_poses_id_{-1};
+    int32_t prev_lines_id_{-1};
+    int32_t prev_arrows_id_{0};
 };
 }
 
