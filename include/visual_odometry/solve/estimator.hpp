@@ -13,7 +13,7 @@ public:
     Estimator() = default;
     bool estimate(Context& context, const cv::Matx33d& K);
 
-    double max_allowed_translation_sq_{10.0};
+    double max_delta_pose_norm_{50.0};
 };
 }
 

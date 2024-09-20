@@ -32,9 +32,8 @@ public:
     bool do_bundle_adjustment_{false};
     unsigned long min_num_features_{500};
     int grid_cell_size_{10};
-    double loss_function_scale_{5.0};
     int bundle_adjustment_window_{20};
-    double max_allowed_translation_sq_{10.0};
+    double max_delta_pose_norm_{10.0};
     int num_active_frames_{30};
 
 private:

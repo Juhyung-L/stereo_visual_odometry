@@ -4,7 +4,6 @@
 #include <ceres/numeric_diff_cost_function.h>
 #include <ceres/problem.h>
 #include <ceres/solver.h>
-#include <ceres/loss_function.h>
 
 #include <sophus/ceres_manifold.hpp>
 
@@ -17,25 +16,24 @@ void Optimizer::optimize(const std::shared_ptr<Map>& map,
 {
     ceres::Problem problem;
     ceres::Manifold* se3Parametrization = new Sophus::Manifold<Sophus::SE3>();
-    ceres::LossFunction* loss_function = new ceres::HuberLoss(loss_function_scale);
     
     for (const std::shared_ptr<MapPoint>& landmark : map->landmarks_)
     {
         problem.AddParameterBlock(landmark->pose_.data(), 3);
     }
 
-    int i = 0;
+    bool first_iter = true;
     for (const std::shared_ptr<Frame>& frame : map->frames_)
     {
         problem.AddParameterBlock(frame->pose_.data(), Sophus::SE3d::num_parameters, se3Parametrization);
-        // make the first 3 frame (and all landmarks connected to the frames) constant
-        if (i < 3) 
+        if (first_iter) 
         {
             problem.SetParameterBlockConstant(frame->pose_.data());
             for (const std::shared_ptr<Feature>& feature : frame->features_left_)
             {
                 problem.SetParameterBlockConstant(feature->landmark_->pose_.data());
             }
+            first_iter = false;
         }
         for (const std::shared_ptr<Feature>& feature : frame->features_left_)
         {
@@ -48,11 +46,10 @@ void Optimizer::optimize(const std::shared_ptr<Map>& map,
                     ReprojectionError, ceres::CENTRAL, 2, Sophus::SE3d::num_parameters, 3>(
                         constraint);
             problem.AddResidualBlock(cost_function,
-                loss_function,
+                nullptr,
                 frame->pose_.data(),
                 feature->landmark_->pose_.data());
         }
-        ++i;
     }
 
     ceres::Solver::Options options;

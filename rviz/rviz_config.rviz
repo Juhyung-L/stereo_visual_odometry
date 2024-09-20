@@ -95,20 +95,7 @@ Visualization Manager:
         Value: /vo/frame_right
       Value: true
     - Class: rviz_default_plugins/Marker
-      Enabled: false
-      Name: Marker
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /vo/lines
-      Value: false
-    - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Marker
       Namespaces:
         {}
@@ -119,9 +106,22 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /vo/landmarks
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
+      Value: true
+    - Class: rviz_default_plugins/Marker
       Enabled: true
+      Name: Marker
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /vo/lines
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
       Name: MarkerArray
       Namespaces:
         {}
@@ -131,7 +131,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /vo/arrows
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -178,16 +178,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 161.562744140625
+      Distance: 44.347442626953125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 28.562246322631836
-        Y: 8.884237289428711
-        Z: 34.11455535888672
+        X: 4.6674604415893555
+        Y: 12.265752792358398
+        Z: 5.768921852111816
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

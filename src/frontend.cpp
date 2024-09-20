@@ -13,11 +13,10 @@ Frontend::Frontend(const Camera& camera_left, const Camera& camera_right, const 
 void Frontend::initialize()
 {
     detector_.grid_cell_size_ = grid_cell_size_;
-    optimizer_.loss_function_scale_ = loss_function_scale_;
     triangulator_.camera_left_ = camera_left_;
     triangulator_.camera_right_ = camera_right_;
     triangulator_.map_ = map_;
-    estimator_.max_allowed_translation_sq_ = max_allowed_translation_sq_;
+    estimator_.max_delta_pose_norm_ = max_delta_pose_norm_;
 }
 
 void Frontend::visualOdometryPipeline()

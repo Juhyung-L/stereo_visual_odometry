@@ -16,17 +16,15 @@ void setParams(const rclcpp::Node::SharedPtr& node, const std::shared_ptr<VO::Fr
     node->declare_parameter("do_bundle_adjustment", false);
     node->declare_parameter("min_num_features", 500);
     node->declare_parameter("grid_cell_size", 10);
-    node->declare_parameter("loss_function_scale", 5.0);
     node->declare_parameter("bundle_adjustment_window", 20);
-    node->declare_parameter("max_allowed_translation_sq_", 10.0);
+    node->declare_parameter("max_delta_pose_norm", 50.0);
     node->declare_parameter("num_active_frames", 30);
 
     frontend->do_bundle_adjustment_ = node->get_parameter("do_bundle_adjustment").as_bool();
     frontend->min_num_features_ = static_cast<unsigned long>(node->get_parameter("min_num_features").as_int());
     frontend->grid_cell_size_ = node->get_parameter("grid_cell_size").as_int();
-    frontend->loss_function_scale_ = node->get_parameter("loss_function_scale").as_double();
     frontend->bundle_adjustment_window_ = node->get_parameter("bundle_adjustment_window").as_int();
-    frontend->max_allowed_translation_sq_ = node->get_parameter("max_allowed_translation_sq_").as_double();
+    frontend->max_delta_pose_norm_ = node->get_parameter("max_delta_pose_norm").as_double();
     frontend->num_active_frames_ = node->get_parameter("num_active_frames").as_int();
 }
 

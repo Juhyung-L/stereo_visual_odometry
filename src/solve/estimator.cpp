@@ -28,7 +28,7 @@ bool Estimator::estimate(Context& context, const cv::Matx33d& K)
     cv::solvePnPRansac(points_3d, points_2d, K, coeffs, rvec, tvec,
         false, 1000, 3.0, 0.99, inliers);
     
-    // remove features if it was not used to estimate motion
+    // remove feature if it was not used to estimate motion
     std::vector<std::shared_ptr<Feature>> left_feature_curr;
     std::vector<cv::Point2f> right_feature_curr;
 
@@ -56,26 +56,16 @@ bool Estimator::estimate(Context& context, const cv::Matx33d& K)
     cv::cv2eigen<double, 3, 1>(tvec, eigen_t);
 
     Sophus::SE3d T(eigen_R, eigen_t);
-
-    double distance_traveled_sq_ = 
-        eigen_t.x()*eigen_t.x() +
-        eigen_t.y()*eigen_t.y() +
-        eigen_t.z()*eigen_t.z();
-    if (distance_traveled_sq_ > max_allowed_translation_sq_)
+    Sophus::SE3d curr_pose = T.inverse();
+    Sophus::SE3d delta_pose = curr_pose * context.frame_prev_->pose_.inverse();
+    double delta_pose_norm = delta_pose.log().norm();
+    if (delta_pose_norm > max_delta_pose_norm_)
     {
         return false;
     }
 
-    // I thought it would be current_pose = T * prev_pose?
-    context.frame_curr_->pose_ = context.frame_prev_->pose_ * T.inverse();
+    context.frame_curr_->pose_ = curr_pose;
 
-    // transform landmarks into world frame
-    for (std::shared_ptr<Feature>& feature : context.frame_curr_->features_left_)
-    {
-        feature->landmark_->pose_ = context.frame_curr_->pose_ * feature->landmark_->pose_;
-    }
-
-    Sophus::SE3d& curr_pose = context.frame_curr_->pose_;
     std::cout << "x: " << curr_pose.translation().x() 
               << "y: " << curr_pose.translation().y() 
               << "z: " << curr_pose.translation().z() << std::endl;

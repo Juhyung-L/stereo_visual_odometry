@@ -22,7 +22,7 @@ std::size_t Triangulator::firstFeatureWithoutLandmark(const std::vector<std::sha
             return i;
         }
     }
-    return 0;
+    return features.size();
 }
 
 /**
@@ -33,12 +33,12 @@ std::size_t Triangulator::firstFeatureWithoutLandmark(const std::vector<std::sha
 void Triangulator::triangulate(Context& context)
 {
     std::size_t start_idx = firstFeatureWithoutLandmark(context.frame_prev_->features_left_);
+    // if all features already have a landmark, return immediately
+    if (start_idx == context.frame_prev_->features_left_.size()) {return;}
     std::vector<cv::Point2f> matches_2d_left = context.frame_prev_->getPointsLeft2D(start_idx);
     std::vector<cv::Point2f> matches_2d_right(
         context.frame_prev_->features_right_.begin()+start_idx,
         context.frame_prev_->features_right_.end());
-
-    std::cout << matches_2d_left.size() << " points triangulated\n";
 
     cv::Mat points_4d;
     std::vector<cv::Point3f> points_3d;
@@ -57,8 +57,11 @@ void Triangulator::triangulate(Context& context)
         landmark->pose_.x() = points_3d[i].x;
         landmark->pose_.y() = points_3d[i].y;
         landmark->pose_.z() = points_3d[i].z;
+        // transform landmark into world frame
+        landmark->pose_ = context.frame_prev_->pose_ * landmark->pose_;
         map_->insertLandmark(landmark);
         landmark->observations_.push_back(context.frame_prev_->features_left_[i+start_idx]);
     }
+    std::cout << matches_2d_left.size() << " points triangulated\n";
 }
 }
