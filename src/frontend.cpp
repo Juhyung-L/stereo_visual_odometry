@@ -70,7 +70,7 @@ void Frontend::visualOdometryPipeline()
     // bundle adjustment
     if (do_bundle_adjustment_ && iterations_ % bundle_adjustment_window_ == 0)
     {
-        optimizer_.optimize(map_, camera_left_.K_, loss_function_scale_);
+        optimizer_.optimize(map_, camera_left_.K_);
         // erase the poses that will get optimized
         if (poses_.size() < map_->frames_.size()) {poses_.clear();}
         else {poses_.erase(poses_.end()-map_->frames_.size(), poses_.end());}

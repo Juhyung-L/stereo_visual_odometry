@@ -11,8 +11,7 @@
 
 namespace VO
 {
-void Optimizer::optimize(const std::shared_ptr<Map>& map, 
-    const cv::Matx33d& K, double loss_function_scale)
+void Optimizer::optimize(const std::shared_ptr<Map>& map, const cv::Matx33d& K)
 {
     ceres::Problem problem;
     ceres::Manifold* se3Parametrization = new Sophus::Manifold<Sophus::SE3>();

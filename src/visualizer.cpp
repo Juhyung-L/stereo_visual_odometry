@@ -1,6 +1,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "cv_bridge/cv_bridge.h"
 
 #include "visual_odometry/visualizer.hpp"
@@ -10,27 +11,46 @@ namespace VO
 Visualizer::Visualizer()
 : Node("VO_visualizer")
 {
-    lines_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-        "vo/lines", rclcpp::SystemDefaultsQoS());
-    arrows_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "vo/arrows", rclcpp::SystemDefaultsQoS());
+    poses_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "vo/poses", rclcpp::SystemDefaultsQoS());
     landmark_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "vo/landmarks", rclcpp::SystemDefaultsQoS());
     frame_left_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
         "vo/frame_left", rclcpp::SystemDefaultsQoS());
     frame_right_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
         "vo/frame_right", rclcpp::SystemDefaultsQoS());
-    ground_truth_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+    ground_truth_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "vo/ground_truth", rclcpp::SystemDefaultsQoS());
+
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 }
 
 void Visualizer::visualize(const Context& context, const std::vector<Sophus::SE3d>& poses)
 {
     if (!context.frame_prev_) {return;}
-    visualizeFeatures(context);
-    visualizeLandmarks(context);
-    visualizePoseAsLines(poses);
-    // visualizePoseAsArrows(poses);
+    // visualizeFeatures(context);
+    // visualizeLandmarks(context);
+    visualizePose(poses);
+    // publishPoseTransform(poses.back());
+}
+
+void Visualizer::publishPoseTransform(const Sophus::SE3d& cur_pose)
+{
+    geometry_msgs::msg::TransformStamped t;
+    t.header.stamp = this->now();
+    t.header.frame_id = "map";
+    t.child_frame_id = "base_link";
+
+    t.transform.translation.x = cur_pose.translation().x();
+    t.transform.translation.y = cur_pose.translation().y();
+    t.transform.translation.z = cur_pose.translation().z();
+
+    t.transform.rotation.x = cur_pose.unit_quaternion().x();
+    t.transform.rotation.y = cur_pose.unit_quaternion().y();
+    t.transform.rotation.z = cur_pose.unit_quaternion().z();
+    t.transform.rotation.w = cur_pose.unit_quaternion().w();
+
+    tf_broadcaster_->sendTransform(t);
 }
 
 void Visualizer::visualizeFeatures(const Context& context)
@@ -78,8 +98,8 @@ void Visualizer::visualizeLandmarks(const Context& context)
     m.lifetime = rclcpp::Duration::from_seconds(0);
     m.frame_locked = false;
     m.action = visualization_msgs::msg::Marker::ADD;
-    m.id = this->now().nanoseconds();
     m.type = visualization_msgs::msg::Marker::POINTS;
+    m.id = this->now().nanoseconds();
     m.scale.x = 0.1;
     m.scale.y = 0.1;
     m.color.a = 1.0;
@@ -99,7 +119,7 @@ void Visualizer::visualizeLandmarks(const Context& context)
     landmark_pub_->publish(m);
 }
 
-void Visualizer::visualizePoseAsLines(const std::vector<Sophus::SE3d>& poses)
+void Visualizer::visualizePose(const std::vector<Sophus::SE3d>& poses)
 {
     visualization_msgs::msg::Marker m;
     m.header.frame_id = "map";
@@ -112,87 +132,27 @@ void Visualizer::visualizePoseAsLines(const std::vector<Sophus::SE3d>& poses)
     if (prev_lines_id_ > -1)
     {
         m.id = prev_lines_id_;
-        lines_pub_->publish(m);
+        poses_pub_->publish(m);
     }
     ++prev_lines_id_;
     m.id = prev_lines_id_;
     m.action = visualization_msgs::msg::Marker::ADD;
-    m.type = visualization_msgs::msg::Marker::LINE_LIST;
-    m.scale.x = 1.0;
+    m.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    m.scale.x = 2.0;
     m.color.a = 1.0;
     m.color.r = 1.0; // red
     m.color.g = 0.0;
     m.color.b = 0.0;
 
     geometry_msgs::msg::Point p;
-    for (std::size_t i=1; i<poses.size(); ++i)
-    {
-        p.x = poses[i-1].translation().x();
-        p.y = poses[i-1].translation().y();
-        p.z = poses[i-1].translation().z();
-        m.points.push_back(p);
-
-        p.x = poses[i].translation().x();
-        p.y = poses[i].translation().y();
-        p.z = poses[i].translation().z();
-        m.points.push_back(p);
-    }
-    lines_pub_->publish(m);
-}
-
-void Visualizer::visualizePoseAsArrows(const std::vector<Sophus::SE3d>& poses)
-{
-    visualization_msgs::msg::Marker m;
-    m.header.frame_id = "map";
-
-    // delete previous arrows
-    m.action = visualization_msgs::msg::Marker::DELETE; 
-    visualization_msgs::msg::MarkerArray m_arr;
-    for (int32_t i=0; i<prev_arrows_id_; ++i)
-    {
-        m.id = i;
-        m_arr.markers.push_back(m);
-    }
-    arrows_pub_->publish(m_arr);
-
-    m.header.stamp = this->now();
-    m.lifetime = rclcpp::Duration::from_seconds(0);
-    m.frame_locked = false;
-    m.action = visualization_msgs::msg::Marker::ADD;
-    m.type = visualization_msgs::msg::Marker::ARROW;
-    m.scale.x = 1.0; // length
-    m.scale.y = 0.2; // width
-    m.scale.z = 0.2; // height
-    m.color.a = 1.0;
-    m.color.r = 1.0; // red
-    m.color.g = 0.0;
-    m.color.b = 0.0;
-
-    m_arr.markers.clear();
-    int32_t id = 0;
-
-    Eigen::AngleAxisd roll(0.0, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd pitch(-90.0 * M_PI / 180.0, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd yaw(0.0, Eigen::Vector3d::UnitZ());
-    Eigen::Quaterniond camera_rotation = roll * pitch* yaw;
     for (const Sophus::SE3d& pose : poses)
     {
-        m.id = id;
-        m.pose.position.x = pose.translation().x();
-        m.pose.position.y = pose.translation().y();
-        m.pose.position.z = pose.translation().z();
-
-        Eigen::Quaterniond q = pose.unit_quaternion();
-        q *= camera_rotation;
-        m.pose.orientation.x = q.x();
-        m.pose.orientation.y = q.y();
-        m.pose.orientation.z = q.z();
-        m.pose.orientation.w = q.w();
-        m_arr.markers.push_back(m);
-        ++id;
+        p.x = pose.translation().x();
+        p.y = pose.translation().y();
+        p.z = pose.translation().z();
+        m.points.push_back(p);
     }
-    arrows_pub_->publish(m_arr);
-    prev_arrows_id_ = id;
+    poses_pub_->publish(m);
 }
 
 void Visualizer::visualizeGroundTruth(const std::vector<Sophus::SE3f>& ground_truth_poses)
@@ -203,31 +163,20 @@ void Visualizer::visualizeGroundTruth(const std::vector<Sophus::SE3f>& ground_tr
     m.frame_locked = false;
     m.action = visualization_msgs::msg::Marker::ADD;
     m.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    m.scale.x = 0.6;
+    m.scale.x = 1.0;
     m.color.a = 1.0;
     m.color.r = 1.0;
     m.color.g = 1.0;
     m.color.b = 1.0;
 
-    visualization_msgs::msg::MarkerArray m_arr;
     geometry_msgs::msg::Point p;
-    for (std::size_t i=1; i<ground_truth_poses.size(); ++i)
+    for (const Sophus::SE3f& pose : ground_truth_poses)
     {
-        m.points.clear();
-        m.header.stamp = this->now();
-        m.id = this->now().nanoseconds();
-
-        p.x = ground_truth_poses[i-1].translation().x();
-        p.y = ground_truth_poses[i-1].translation().y();
-        p.z = ground_truth_poses[i-1].translation().z();
+        p.x = pose.translation().x();
+        p.y = pose.translation().y();
+        p.z = pose.translation().z();
         m.points.push_back(p);
-
-        p.x = ground_truth_poses[i].translation().x();
-        p.y = ground_truth_poses[i].translation().y();
-        p.z = ground_truth_poses[i].translation().z();
-        m.points.push_back(p);
-        m_arr.markers.push_back(m);
     }
-    ground_truth_pub_->publish(m_arr);
+    ground_truth_pub_->publish(m);
 }
 }

@@ -15,6 +15,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(Ceres REQUIRED)
 
 set(dependencies
@@ -24,6 +25,7 @@ set(dependencies
   visualization_msgs
   std_msgs
   cv_bridge
+  tf2_ros
 )
 
 include_directories(

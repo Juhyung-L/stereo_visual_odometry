@@ -15,8 +15,7 @@ class Optimizer
 {
 public:
     Optimizer() = default;
-    void optimize(const std::shared_ptr<Map>& map, 
-        const cv::Matx33d& K, double loss_function_scale);
+    void optimize(const std::shared_ptr<Map>& map, const cv::Matx33d& K);
 };
 
 class ReprojectionError
