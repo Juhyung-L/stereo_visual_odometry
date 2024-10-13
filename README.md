@@ -1,7 +1,7 @@
 # stereo_visual_odometry
 Visual odometry performed with stereo camera setup (KITTI dataset). FAST feature extraction and matching with OpenCV and bundle adjustment with Ceres Solver.
 
-Detailed explanation at: https://juhyungsprojects.blogspot.com/2024/10/stereo-visual-odometry-with-bundle.html
+Detailed explanation at: https://juhyunglee0313.wixsite.com/portfolio/post/stereo-visual-odometry-with-bundle-adjustment
 
 ![](https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExczA1eXNlNGp1c2R1dDYyMzAzbXNzczY2eWU3dXR6d2J4OG1jc3dhdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FbYFcySAYUCeGDwwO7/giphy-downsized-large.gif)
 
